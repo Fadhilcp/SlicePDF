@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Document, Types } from "mongoose";
 
 export interface IUser{
     name: string,
@@ -6,7 +6,7 @@ export interface IUser{
     password: string,
 }
 
-export interface IUserDocument extends IUser {
+export interface IUserDocument extends IUser, Document {
     _id: Types.ObjectId,
     createdAt: Date,
     updatedAt: Date,

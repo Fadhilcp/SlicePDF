@@ -3,6 +3,7 @@ import { env } from './config/env.config';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/mongo.config';
+import pdfRouter from './routes/pdf.route';
 
 const app = express();
 
@@ -18,6 +19,10 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+
+app.use("/api/files",express.static("src/uploads"));
+
+app.use("/api/pdf", pdfRouter);
 
 app.listen(env.PORT, () => {
     console.log(`server is running in http://localhost:${env.PORT}`)

@@ -1,14 +1,15 @@
 import { model, Schema } from "mongoose";
+import { IPdfDocument } from "../types/pdf.types";
 
 const pdfSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        required: true,
+        required: false,
     },
     type: {
         type: String,
-        enum: ["orignals", "generated"],
+        enum: ["original", "generated"],
         required: true,
     },
     originalName: {
@@ -25,7 +26,7 @@ const pdfSchema = new Schema({
         ref: "PDF",
         default: null,
     },
-    seletedPages: {
+    selectedPages: {
         type: [Number],
         default: [],
     },
@@ -34,4 +35,4 @@ const pdfSchema = new Schema({
     },
 }, { timestamps: true });
 
-export default model('PDF', pdfSchema);
+export default model<IPdfDocument>('PDF', pdfSchema);
