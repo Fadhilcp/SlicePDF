@@ -31,6 +31,7 @@ export interface OriginalFile {
     name: string;
     createdAt: Date;
     size: string;
+    openUrl: string;
 }
 
 export interface GeneratedFile {
@@ -39,4 +40,5 @@ export interface GeneratedFile {
     pages: number[];
     createdAt: Date;
     size: string;
+    downloadUrl: string;
 }

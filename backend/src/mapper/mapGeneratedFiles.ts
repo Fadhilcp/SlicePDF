@@ -12,5 +12,6 @@ export const mapGeneratedFiles = (
         pages: file.selectedPages,
         createdAt: file.createdAt,
         size: formatFileSize(file.fileSize || 0),
+        downloadUrl: `/pdf/generated/${file.storedName}/download`,
     }));
 };

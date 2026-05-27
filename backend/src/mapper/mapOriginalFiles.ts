@@ -12,5 +12,6 @@ export const mapOriginalFiles = (
         name: file.originalName,
         createdAt: file.createdAt,
         size: formatFileSize(file.fileSize || 0),
+        openUrl: `/files/originals/${file.storedName}`,
     }));
 };

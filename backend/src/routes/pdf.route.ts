@@ -15,5 +15,7 @@ const pdfController = new PdfController(pdfService);
 pdfRouter.post('/upload',authMiddleware,uploadPdf.single("pdf"),pdfController.uploadPdf.bind(pdfController));
 pdfRouter.post('/extract',authMiddleware,pdfController.extractPdf.bind(pdfController));
 pdfRouter.get('/my-files',authMiddleware,pdfController.getMyFiles.bind(pdfController));
+pdfRouter.get("/generated/:filename/download",pdfController.downloadGeneratedPdf.bind(pdfController));
+pdfRouter.get('/:pdfId',authMiddleware,pdfController.getPdfById.bind(pdfController));
 
 export default pdfRouter;

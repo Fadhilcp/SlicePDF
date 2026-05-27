@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { IPdfService } from "../services/interfaces/IPdfService";
+import path from "path";
 
 export class PdfController {
     constructor(
@@ -17,7 +18,7 @@ export class PdfController {
 
             const userId = req.user?.userId;
 
-            const pdf = await this._pdfService.uploadPdf({
+            const { pdf, pdfUrl } = await this._pdfService.uploadPdf({
                 userId,
                 originalName: file.originalname,
                 storedName: file.filename,
@@ -30,7 +31,8 @@ export class PdfController {
                     storedName: pdf.storedName,
                     fileSize: pdf.fileSize,
                     createdAt: pdf.createdAt,
-                } 
+                }, 
+                pdfUrl
             });
 
         } catch (error) {
@@ -73,9 +75,51 @@ export class PdfController {
             const files = await this._pdfService.getMyFiles(userId);
 
             return res.status(200).json({
-            success: true,
-            files,
+                success: true,
+                files,
             });
+
+        } catch (error) {
+            next(error);
+        }
+    }
+
+
+    async getPdfById(req: Request, res: Response, next: NextFunction) {
+        try {
+            const pdfId = req.params.pdfId as string;
+
+            if (!pdfId) {
+                throw new Error("PDF id is required");
+            }
+
+            const pdf = await this._pdfService.getPdfById(pdfId);
+
+            return res.status(200).json({
+                success: true,
+                pdf,
+            });
+
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async downloadGeneratedPdf(req: Request, res: Response, next: NextFunction) {
+        try {
+            const filename = req.params.filename as string;
+
+            if (!filename) {
+                throw new Error("Filename is required");
+            }
+
+            const filePath = path.join(
+                process.cwd(),
+                "src/uploads/generated",
+                filename
+            );
+
+            return res.download(filePath);
 
         } catch (error) {
             next(error);

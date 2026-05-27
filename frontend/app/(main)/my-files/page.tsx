@@ -5,6 +5,8 @@ import Link from "next/link";
 import { IconCalendar, IconDownload, IconExternalLink, IconFile, IconFilePlus, IconHardDrive, IconLayers, IconScissors, IconUploadCloud } from "@/components/icons/Icons";
 import { pdfService } from "@/services/pdf.service";
 import Loader from "@/components/ui/Loader";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface OriginalFile {
@@ -12,6 +14,7 @@ interface OriginalFile {
   name: string;
   createdAt: string;
   size: string;
+  openUrl: string;
 }
 
 interface GeneratedFile {
@@ -20,6 +23,7 @@ interface GeneratedFile {
   pages: number[];
   createdAt: string;
   size: string;
+  downloadUrl: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -61,9 +65,12 @@ const OriginalCard = ({ file }: { file: OriginalFile }) => (
         >
           Slice again
         </Link>
-        <button className="flex items-center gap-1.5 px-3 py-[0.4rem] bg-white/5 border border-ink/10 text-ink/60 text-[0.78rem] font-medium rounded-lg transition-all duration-200 hover:border-ink/25 hover:text-ink cursor-pointer">
+        <a href={`${process.env.NEXT_PUBLIC_API_URL}${file.openUrl}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-[0.4rem] bg-white/5 border border-ink/10 text-ink/60 text-[0.78rem] font-medium rounded-lg transition-all duration-200 hover:border-ink/25 hover:text-ink cursor-pointer">
           <IconExternalLink /> Open PDF
-        </button>
+        </a>
       </div>
     </div>
   </div>
@@ -99,9 +106,11 @@ const GeneratedCard = ({ file }: { file: GeneratedFile }) => (
     </div>
 
     {/* Download */}
-    <button className="flex-shrink-0 flex items-center gap-1.5 px-3 py-[0.4rem] bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[0.78rem] font-semibold rounded-lg transition-all duration-200 hover:bg-emerald-500/20 cursor-pointer">
+    <a href={`${process.env.NEXT_PUBLIC_API_URL}${file.downloadUrl}`}
+      download
+      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-[0.4rem] bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[0.78rem] font-semibold rounded-lg transition-all duration-200 hover:bg-emerald-500/20 cursor-pointer">
       <IconDownload /> Download
-    </button>
+    </a>
   </div>
 );
 
@@ -154,10 +163,19 @@ export default function MyFilesPage() {
   const [originals, setOriginals] = useState<OriginalFile[]>([]);
   const [generated, setGenerated] = useState<GeneratedFile[]>([]);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const { user, isAuthChecked } = useSelector((state: RootState) => state.auth);
+
   useEffect(() => {
+
+    if (!isAuthChecked) return;
+
+    if (!user) {
+        setIsLoading(false);
+        return;
+    }
 
     async function fetchFiles(){
       try {
@@ -180,12 +198,24 @@ export default function MyFilesPage() {
     }
 
     fetchFiles();
-  }, [])
+  }, [isAuthChecked, user]);
 
-  if (isLoading) {
+  console.log("🚀 ~ MyFilesPage ~ isAuthChecked:", isAuthChecked)
+  console.log("🚀 ~ MyFilesPage ~ isLoading:", isLoading)
+  if (!isAuthChecked || isLoading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
         <Loader />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+          <p className="text-sm text-ink/50">
+              Please login to view your files.
+          </p>
       </div>
     );
   }

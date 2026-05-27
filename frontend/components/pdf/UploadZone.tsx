@@ -7,6 +7,7 @@ import { pdfService } from "@/services/pdf.service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
+import Loader from "../ui/Loader";
 
 const statusConfig = {
     idle: null,
@@ -16,15 +17,19 @@ const statusConfig = {
 };
 
 interface UploadZoneProps {
-    onFileAccepted?: (file: File) => void;
-    onUploadSuccess?: (fileId: string) => void;
+    onUploadSuccess?: (data: {
+        fileId: string;
+        pdfUrl: string;
+    }) => void;
+
     onFileClear?: () => void;
 }
 
-export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: UploadZoneProps) => {
+export const UploadZone = ({ onUploadSuccess, onFileClear }: UploadZoneProps) => {
     const [isDragging, setIsDragging] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+    const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     const router = useRouter();
@@ -39,7 +44,6 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
         }
         setFile(f);
         setUploadStatus("idle");
-        onFileAccepted?.(f)
     }, []);
 
     // Drag handlers
@@ -60,6 +64,7 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
             return;
         }
 
+        setIsUploading(true);
         setUploadStatus("uploading");
         try {
             const formData = new FormData();
@@ -68,9 +73,14 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
             const res = await pdfService.uploadPdf(formData);
             if (!res.data.success) throw new Error("Server error");
             setUploadStatus("success");
-            onUploadSuccess?.(res.data.pdf.id ?? "");
+            onUploadSuccess?.({
+                fileId: res.data.pdf.id,
+                pdfUrl: res.data.pdfUrl,
+            });
         } catch {
             setUploadStatus("error");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -94,6 +104,8 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
 
     return (
         <>
+            {isUploading && <Loader />}
+
             {/* Drop Zone wrapper */}
             <div className="w-full max-w-115" style={{ animation: "fadeUp .6s .08s ease both" }}>
  

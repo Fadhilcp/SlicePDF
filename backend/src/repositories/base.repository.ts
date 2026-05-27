@@ -16,8 +16,8 @@ export class BaseRepository<T> implements IBaseRepository<T> {
         return await this.model.findOne(filter);
     }
 
-    async findAll(filter = {}): Promise<T[]> {
-        return await this.model.find(filter);
+    async findAll(filter = {}, sort: Record<string, 1 | -1> = {}): Promise<T[]> {
+        return await this.model.find(filter).sort(sort);
     }
 
     async updateById(id: string, data: Partial<T>): Promise<T | null> {

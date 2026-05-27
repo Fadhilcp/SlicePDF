@@ -16,6 +16,10 @@ export class PdfService {
     async getMyFiles() {
         return await api.get("/pdf/my-files");
     }
+
+    async getPdfById(pdfId: string){
+        return api.get(`/pdf/${pdfId}`);
+    }
 }
 
 export const pdfService = new PdfService();

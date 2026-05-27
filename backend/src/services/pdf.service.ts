@@ -12,7 +12,7 @@ export class PdfService implements IPdfService {
         private _pdfRepository: IPdfRepository
     ){}
 
-    async uploadPdf(data: UploadPdfDTO): Promise<IPdfDocument> {
+    async uploadPdf(data: UploadPdfDTO): Promise<{ pdf: IPdfDocument, pdfUrl: string }> {
         const createdPdf = await this._pdfRepository.create({
             userId: data.userId,
             type: "original",
@@ -21,7 +21,7 @@ export class PdfService implements IPdfService {
             fileSize: data.fileSize,
         })
 
-        return createdPdf;
+        return { pdf: createdPdf, pdfUrl: `/files/originals/${data.storedName}`};
     }
 
     async extractPdf(
@@ -79,7 +79,7 @@ export class PdfService implements IPdfService {
             selectedPages
         });
 
-        return { pdf: generatedPdf, downloadUrl: `/files/generated/${generateName}`};
+        return { pdf: generatedPdf, downloadUrl: `/pdf/generated/${generateName}/download` };
     }  
     
     async getMyFiles(userId: string): Promise<{ originals: OriginalFile[], generated: GeneratedFile[] }> {
@@ -87,16 +87,31 @@ export class PdfService implements IPdfService {
         const originals = await this._pdfRepository.findAll({
             userId,
             type: "original",
-        });
+        }, { createdAt: -1 });
 
         const generated = await this._pdfRepository.findAll({
             userId,
             type: "generated",
-        });
+        }, { createdAt: -1 });
 
         return {
             originals: mapOriginalFiles(originals),
             generated: mapGeneratedFiles(generated),
+        };
+    }
+
+    async getPdfById(pdfId: string): Promise<{ _id: string; url: string; originalName: string; }> {
+
+        const pdf = await this._pdfRepository.findById(pdfId);
+
+        if (!pdf) {
+            throw new Error("PDF not found");
+        }
+
+        return {
+            _id: pdf._id.toString(),
+            originalName: pdf.originalName,
+            url: `/files/originals/${pdf.storedName}`,
         };
     }
 }

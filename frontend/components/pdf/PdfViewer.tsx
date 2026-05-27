@@ -13,15 +13,17 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 type GenerateStatus = "idle" | "loading" | "success" | "error";
  
 interface PdfViewerProps {
-  file: File;
-  fileId: string;
+    pdfUrl: string;
+    fileId: string;
 }
 
-export const PdfViewer = ({ file, fileId }: PdfViewerProps) => {
+export const PdfViewer = ({ pdfUrl, fileId }: PdfViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [generateStatus, setGenerateStatus] = useState<GenerateStatus>("idle");
   const [downloadUrl, setDownloadUrl] = useState<string>("");
+
+  const fileUrl = `${process.env.NEXT_PUBLIC_API_URL}${pdfUrl}`;
  
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -91,7 +93,7 @@ export const PdfViewer = ({ file, fileId }: PdfViewerProps) => {
  
             {/* PDF Document */}
             <Document
-                file={file}
+                file={fileUrl}
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                     <div className="flex items-center justify-center gap-3 py-16 text-ink/40 text-[0.9rem]">
