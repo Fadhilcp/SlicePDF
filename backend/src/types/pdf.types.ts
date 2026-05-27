@@ -25,3 +25,18 @@ export interface UploadPdfDTO {
   storedName: string;
   fileSize: number;
 }
+
+export interface OriginalFile {
+    _id: string;
+    name: string;
+    createdAt: Date;
+    size: string;
+}
+
+export interface GeneratedFile {
+    _id: string;
+    name: string;
+    pages: number[];
+    createdAt: Date;
+    size: string;
+}

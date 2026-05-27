@@ -2,8 +2,10 @@ import path from "path";
 import fs from "fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { IPdfRepository } from "../repositories/interfaces/IPdfRepository";
-import { IPdfDocument, UploadPdfDTO } from "../types/pdf.types";
+import { GeneratedFile, IPdfDocument, OriginalFile, UploadPdfDTO } from "../types/pdf.types";
 import { IPdfService } from "./interfaces/IPdfService";
+import { mapOriginalFiles } from "../mapper/mapOriginalFiles";
+import { mapGeneratedFiles } from "../mapper/mapGeneratedFiles";
 
 export class PdfService implements IPdfService {
     constructor(
@@ -12,7 +14,7 @@ export class PdfService implements IPdfService {
 
     async uploadPdf(data: UploadPdfDTO): Promise<IPdfDocument> {
         const createdPdf = await this._pdfRepository.create({
-            // userId: data.userId,
+            userId: data.userId,
             type: "original",
             originalName: data.originalName,
             storedName: data.storedName,
@@ -23,8 +25,7 @@ export class PdfService implements IPdfService {
     }
 
     async extractPdf(
-        pdfId: string, selectedPages: number[], 
-        // userId: string
+        pdfId: string, selectedPages: number[], userId: string
     ): Promise<{ pdf: IPdfDocument, downloadUrl: string; }> {
         
         const pdf = await this._pdfRepository.findById(pdfId);
@@ -70,6 +71,7 @@ export class PdfService implements IPdfService {
         );
 
         const generatedPdf = await this._pdfRepository.create({
+            userId,
             type: "generated",
             originalName: "generated.pdf",
             storedName: generateName,
@@ -78,5 +80,23 @@ export class PdfService implements IPdfService {
         });
 
         return { pdf: generatedPdf, downloadUrl: `/files/generated/${generateName}`};
-    }    
+    }  
+    
+    async getMyFiles(userId: string): Promise<{ originals: OriginalFile[], generated: GeneratedFile[] }> {
+
+        const originals = await this._pdfRepository.findAll({
+            userId,
+            type: "original",
+        });
+
+        const generated = await this._pdfRepository.findAll({
+            userId,
+            type: "generated",
+        });
+
+        return {
+            originals: mapOriginalFiles(originals),
+            generated: mapGeneratedFiles(generated),
+        };
+    }
 }

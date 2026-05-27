@@ -4,6 +4,9 @@ import { UploadStatus } from "@/types/pdf.types";
 import { IconCheck, IconFile, IconLoader, IconUpload, IconX } from "../icons/Icons";
 import { useCallback, useRef, useState } from "react";
 import { pdfService } from "@/services/pdf.service";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { useRouter } from "next/navigation";
 
 const statusConfig = {
     idle: null,
@@ -23,6 +26,10 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
     const [file, setFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
     const inputRef = useRef<HTMLInputElement | null>(null);
+
+    const router = useRouter();
+
+    const user = useSelector((state: RootState) => state.auth.user);
 
     const acceptFile = useCallback((f: File | null) => {
         if (!f) return;
@@ -47,6 +54,12 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
 
     const handleUpload = async () => {
         if (!file) return;
+
+        if (!user) {
+            router.push("/login");
+            return;
+        }
+
         setUploadStatus("uploading");
         try {
             const formData = new FormData();
@@ -73,19 +86,33 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
         ? `${(bytes / 1024).toFixed(1)} KB`
         : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 
+    const dropzoneState = file
+        ? "border-solid border-ink/[0.18] cursor-default"
+        : isDragging
+        ? "border-solid border-brand bg-brand/5 shadow-[inset_0_0_0_2px_rgba(232,93,42,0.3)] cursor-pointer"
+        : "border-dashed border-ink/20 bg-white/[0.025] hover:border-brand hover:bg-brand/5 cursor-pointer";
+
     return (
         <>
-            {/* Drop Zone */}
-            <div className="dropzone-wrap">
+            {/* Drop Zone wrapper */}
+            <div className="w-full max-w-115" style={{ animation: "fadeUp .6s .08s ease both" }}>
+ 
                 <input
                     ref={inputRef}
                     type="file"
                     accept="application/pdf"
-                    className="hidden-input"
+                    className="absolute opacity-0 pointer-events-none w-0 h-0"
                     onChange={onInputChange}
                 />
+ 
                 <div
-                    className={`dropzone${isDragging ? " drag" : ""}${file ? " has-file" : ""}`}
+                    className={[
+                        "relative w-full aspect-square min-h-85",
+                        "border-[1.5px] rounded-2xl",
+                        "flex flex-col items-center justify-center gap-4",
+                        "transition-[border-color,background] duration-250 overflow-hidden",
+                        dropzoneState,
+                    ].join(" ")}
                     onDragOver={onDragOver}
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
@@ -96,46 +123,71 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
                     aria-label="PDF upload area"
                 >
                     {file ? (
-                    <>
-                        <button className="file-clear" onClick={(e) => { e.stopPropagation(); clearFile(); }} aria-label="Remove file">
-                        <IconX />
-                        </button>
-                        <div className="file-preview">
-                            <span className="file-icon-wrap"><IconFile /></span>
-                            <span className="file-name">{file.name}</span>
-                            <span className="file-size">{fmt(file.size)}</span>
-                        </div>
-                    </>
+                        <>
+                            {/* Clear button */}
+                            <button
+                                className="absolute top-3.5 right-3.5 bg-white/8 border-none rounded-full w-7 h-7 flex items-center justify-center cursor-pointer text-ink/60 transition-[background,color] duration-200 hover:bg-red-500/20 hover:text-red-400"
+                                onClick={(e) => { e.stopPropagation(); clearFile(); }}
+                                aria-label="Remove file"
+                            >
+                                <IconX />
+                            </button>
+ 
+                            {/* File info */}
+                            <div className="flex flex-col items-center gap-4 p-6 w-full">
+                                <span className="text-brand opacity-90"><IconFile /></span>
+                                <span className="text-[0.95rem] font-medium text-ink-strong text-center break-all max-w-85">
+                                    {file.name}
+                                </span>
+                                <span className="text-[0.8rem] text-ink/40">{fmt(file.size)}</span>
+                            </div>
+                        </>
                     ) : (
-                    <>
-                        <span className="dz-icon"><IconUpload /></span>
-                        <div style={{ textAlign: "center" }}>
-                            <p className="dz-primary">
-                                Drop your PDF here, or{" "}
-                                <span className="dz-browse">browse</span>
+                        <>
+                            <span className={`transition-colors duration-250 ${isDragging ? "text-brand" : "text-ink/30"}`}>
+                                <IconUpload />
+                            </span>
+                            <div className="text-center">
+                                <p className="text-[1rem] font-medium text-ink">
+                                    Drop your PDF here, or{" "}
+                                    <span className="text-brand underline cursor-pointer">browse</span>
+                                </p>
+                                <p className="text-[0.825rem] text-ink/40 mt-1">Drag &amp; drop supported</p>
+                            </div>
+                            <p className="text-[0.75rem] text-ink/30 mt-1 tracking-[0.03em]">
+                                PDF files only · Max 100 MB
                             </p>
-                            <p className="dz-secondary" style={{ marginTop: "4px" }}>Drag &amp; drop supported</p>
-                        </div>
-                        <p className="dz-formats">PDF files only · Max 100 MB</p>
-                    </>
+                        </>
                     )}
                 </div>
             </div>
-
+ 
             {/* Actions */}
-            <div className="actions">
+            <div className="w-full max-w-115 mt-5 flex flex-col gap-3.5" style={{ animation: "fadeUp .65s .16s ease both" }}>
+ 
+                {/* Status bar */}
                 {status && (
                     <div
-                    className="status-bar"
-                    style={{ background: status.bg, color: status.color }}
+                        className="flex items-center gap-[0.6rem] px-4 py-[0.6rem] rounded-lg text-sm font-medium"
+                        style={{ background: status.bg, color: status.color }}
                     >
                         {uploadStatus === "uploading" && <IconLoader />}
-                        {uploadStatus === "success" && <IconCheck />}
+                        {uploadStatus === "success"   && <IconCheck />}
                         {status.label}
                     </div>
                 )}
+ 
+                {/* Upload button */}
                 <button
-                    className={`upload-btn${uploadStatus === "uploading" ? " uploading" : ""}`}
+                    className={[
+                        "w-full py-3 px-5 bg-brand text-white border-none rounded-[10px]",
+                        "font-sans text-[0.95rem] font-semibold tracking-[0.01em]",
+                        "flex items-center justify-center gap-[0.6rem]",
+                        "transition-[background,transform,opacity] duration-200",
+                        "hover:enabled:bg-brand-hover active:enabled:scale-[0.985]",
+                        "disabled:opacity-45 disabled:cursor-not-allowed",
+                        uploadStatus === "uploading" ? "animate-[pulse_1.4s_ease-in-out_infinite]" : "",
+                    ].join(" ")}
                     onClick={handleUpload}
                     disabled={!file || uploadStatus === "uploading" || uploadStatus === "success"}
                 >
@@ -149,5 +201,5 @@ export const UploadZone = ({ onFileAccepted, onUploadSuccess, onFileClear }: Upl
                 </button>
             </div>
         </>
-    )
+    );
 }

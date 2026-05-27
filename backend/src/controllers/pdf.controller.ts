@@ -15,10 +15,10 @@ export class PdfController {
                 return res.status(400).json({ success: false, message: "No file uploaded"});
             }
 
-            // const userId = '6854c84f7f9f5c31d2e8f991';
+            const userId = req.user?.userId;
 
             const pdf = await this._pdfService.uploadPdf({
-                // userId,
+                userId,
                 originalName: file.originalname,
                 storedName: file.filename,
                 fileSize: file.size
@@ -43,15 +43,40 @@ export class PdfController {
             
             const { pdfId, selectedPages } = req.body;
 
-            // const userId = "0";
+            const userId = req.user?.userId;
+
+            if(!userId){
+                return res.status(401).json({ message: "Unauthorized", success: false });
+            }
 
             const { pdf, downloadUrl } = await this._pdfService.extractPdf(
                 pdfId,
                 selectedPages,
-                // userId
+                userId
             );
 
             return res.status(200).json({ success: true, pdf, downloadUrl });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getMyFiles(req: Request,res: Response,next: NextFunction) {
+        try {
+
+            const userId = req.user?.userId;
+
+            if(!userId) {
+                return res.status(401).json({ message: "Unauthorized", success: false });
+            }
+
+            const files = await this._pdfService.getMyFiles(userId);
+
+            return res.status(200).json({
+            success: true,
+            files,
+            });
+
         } catch (error) {
             next(error);
         }

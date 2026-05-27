@@ -4,6 +4,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/mongo.config';
 import pdfRouter from './routes/pdf.route';
+import { errorMiddleware } from './middleware/error.middleware';
+import authRouter from './routes/auth.route';
 
 const app = express();
 
@@ -23,6 +25,9 @@ app.use(express.urlencoded({extended: true}));
 app.use("/api/files",express.static("src/uploads"));
 
 app.use("/api/pdf", pdfRouter);
+app.use("/api/auth", authRouter);
+
+app.use(errorMiddleware);
 
 app.listen(env.PORT, () => {
     console.log(`server is running in http://localhost:${env.PORT}`)
