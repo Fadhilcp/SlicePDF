@@ -6,8 +6,11 @@ import { connectDB } from './config/mongo.config';
 import pdfRouter from './routes/pdf.route';
 import { errorMiddleware } from './middleware/error.middleware';
 import authRouter from './routes/auth.route';
+import { ensureUploadDirectoriesExist } from './utils/ensureUploadDirectories';
 
 const app = express();
+
+ensureUploadDirectoriesExist();
 
 connectDB();
 
