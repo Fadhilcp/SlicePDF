@@ -2,162 +2,23 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconCalendar, IconDownload, IconExternalLink, IconFile, IconFilePlus, IconHardDrive, IconLayers, IconScissors, IconUploadCloud } from "@/components/icons/Icons";
+import { IconFilePlus, IconScissors, IconUploadCloud } from "@/components/icons/Icons";
 import { pdfService } from "@/services/pdf.service";
 import Loader from "@/components/ui/Loader";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { GeneratedFile, OriginalFile } from "@/types/file.types";
+import GeneratedCard from "@/components/cards/GeneratedCard";
+import OriginalCard from "@/components/cards/OriginalCard";
+import SectionHeader from "@/components/ui/SectionHeader";
+import EmptyGenerated from "@/components/ui/EmptyGenerated";
+import EmptyOriginals from "@/components/ui/EmptyOriginals";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface OriginalFile {
-  _id: string;
-  name: string;
-  createdAt: string;
-  size: string;
-  openUrl: string;
-}
 
-interface GeneratedFile {
-  _id: string;
-  name: string;
-  pages: number[];
-  createdAt: string;
-  size: string;
-  downloadUrl: string;
-}
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-// ── Original File Card ────────────────────────────────────────────────────────
-const OriginalCard = ({ file }: { file: OriginalFile }) => (
-  <div className="group relative bg-white/[0.03] border border-ink/10 rounded-2xl p-5 flex gap-4 transition-all duration-300 hover:border-brand/40 hover:bg-brand/[0.03] hover:-translate-y-[2px]">
 
-    {/* PDF icon block */}
-    <div className="flex-shrink-0 w-12 h-14 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand">
-      <IconFile size={24} />
-    </div>
 
-    {/* Content */}
-    <div className="flex-1 min-w-0">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <h3 className="text-[0.9rem] font-medium text-ink-strong truncate leading-snug" title={file.name}>
-          {file.name}
-        </h3>
-      </div>
-
-      {/* Meta row */}
-      <div className="flex items-center gap-4 mb-4">
-        <span className="flex items-center gap-1.5 text-[0.75rem] text-ink/40">
-          <IconCalendar /> {formatDate(file.createdAt)}
-        </span>
-        <span className="flex items-center gap-1.5 text-[0.75rem] text-ink/40">
-          <IconHardDrive /> {file.size}
-        </span>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/?fileId=${file._id}`}
-          className="flex items-center gap-1.5 px-3 py-[0.4rem] bg-brand text-white text-[0.78rem] font-semibold rounded-lg no-underline transition-colors duration-200 hover:bg-brand-hover"
-        >
-          Slice again
-        </Link>
-        <a href={`${process.env.NEXT_PUBLIC_API_URL}${file.openUrl}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-[0.4rem] bg-white/5 border border-ink/10 text-ink/60 text-[0.78rem] font-medium rounded-lg transition-all duration-200 hover:border-ink/25 hover:text-ink cursor-pointer">
-          <IconExternalLink /> Open PDF
-        </a>
-      </div>
-    </div>
-  </div>
-);
-
-// ── Generated File Card ───────────────────────────────────────────────────────
-const GeneratedCard = ({ file }: { file: GeneratedFile }) => (
-  <div className="group bg-white/[0.025] border border-ink/[0.08] rounded-xl p-4 flex items-center gap-4 transition-all duration-300 hover:border-ink/20 hover:bg-white/[0.04]">
-
-    {/* Icon */}
-    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-      <IconFile size={18} />
-    </div>
-
-    {/* Content */}
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-[0.85rem] font-medium text-ink-strong truncate">{file.name}</span>
-        <span className="flex-shrink-0 text-[0.62rem] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-[1px] rounded-full">
-          Generated
-        </span>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <span className="text-[0.73rem] text-ink/40 flex items-center gap-1">
-          <IconCalendar /> {formatDate(file.createdAt)}
-        </span>
-        <span className="text-[0.73rem] text-ink/40">
-          Pages: <span className="text-ink/60 font-medium">{file.pages.join(", ")}</span>
-        </span>
-        <span className="text-[0.73rem] text-ink/40">{file.size}</span>
-      </div>
-    </div>
-
-    {/* Download */}
-    <a href={`${process.env.NEXT_PUBLIC_API_URL}${file.downloadUrl}`}
-      download
-      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-[0.4rem] bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[0.78rem] font-semibold rounded-lg transition-all duration-200 hover:bg-emerald-500/20 cursor-pointer">
-      <IconDownload /> Download
-    </a>
-  </div>
-);
-
-// ── Empty States ──────────────────────────────────────────────────────────────
-const EmptyOriginals = () => (
-  <div className="flex flex-col items-center justify-center py-16 px-6 text-center border border-dashed border-ink/10 rounded-2xl bg-white/[0.015]">
-    <div className="w-16 h-16 rounded-2xl bg-brand/8 border border-brand/15 flex items-center justify-center text-brand/50 mb-4">
-      <IconUploadCloud />
-    </div>
-    <h3 className="text-[0.95rem] font-medium text-ink-strong mb-1">No uploads yet</h3>
-    <p className="text-[0.825rem] text-ink/40 mb-5 max-w-[240px]">
-      Upload your first PDF to start slicing pages.
-    </p>
-    <Link
-      href="/"
-      className="flex items-center gap-2 px-4 py-2 bg-brand text-white text-[0.825rem] font-semibold rounded-lg no-underline transition-colors duration-200 hover:bg-brand-hover"
-    >
-      Upload your first PDF
-    </Link>
-  </div>
-);
-
-const EmptyGenerated = () => (
-  <div className="flex flex-col items-center justify-center py-10 px-6 text-center border border-dashed border-ink/[0.07] rounded-xl">
-    <div className="w-12 h-12 rounded-xl bg-white/4 border border-ink/10 flex items-center justify-center text-ink/25 mb-3">
-      <IconFilePlus />
-    </div>
-    <p className="text-[0.825rem] text-ink/35">
-      No generated PDFs yet — slice an upload to create one.
-    </p>
-  </div>
-);
-
-// ── Section header ────────────────────────────────────────────────────────────
-const SectionHeader = ({ title, count }: { title: string; count: number }) => (
-  <div className="flex items-center gap-3 mb-5">
-    <h2 className="font-serif text-[1.25rem] text-ink-strong tracking-tight2">{title}</h2>
-    {count > 0 && (
-      <span className="text-[0.72rem] font-medium text-ink/40 bg-white/5 border border-ink/10 px-2 py-0.5 rounded-full">
-        {count}
-      </span>
-    )}
-    <div className="flex-1 h-px bg-gradient-to-r from-ink/10 to-transparent ml-1" />
-  </div>
-);
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function MyFilesPage() {
 
   const [originals, setOriginals] = useState<OriginalFile[]>([]);
@@ -200,8 +61,6 @@ export default function MyFilesPage() {
     fetchFiles();
   }, [isAuthChecked, user]);
 
-  console.log("🚀 ~ MyFilesPage ~ isAuthChecked:", isAuthChecked)
-  console.log("🚀 ~ MyFilesPage ~ isLoading:", isLoading)
   if (!isAuthChecked || isLoading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
@@ -254,7 +113,7 @@ export default function MyFilesPage() {
 
       <div className="relative z-10 max-w-[860px] mx-auto px-6 py-12">
 
-        {/* ── Page header ── */}
+        {/* Page header */}
         <div className="mb-10" style={{ animation: "fadeUp 0.5s ease both" }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -300,7 +159,7 @@ export default function MyFilesPage() {
           )}
         </div>
 
-        {/* ── Section 1: Original Uploads ── */}
+        {/* Original Uploads */}
         <div className="mb-12" style={{ animation: "fadeUp 0.5s 0.1s ease both" }}>
           <SectionHeader title="Original Uploads" count={originals.length} />
           {originals.length === 0 ? (
@@ -314,7 +173,7 @@ export default function MyFilesPage() {
           )}
         </div>
 
-        {/* ── Section 2: Generated PDFs ── */}
+        {/* Generated PDFs */}
         <div style={{ animation: "fadeUp 0.5s 0.2s ease both" }}>
           <SectionHeader title="Generated PDFs" count={generated.length} />
           {generated.length === 0 ? (
