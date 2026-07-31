@@ -1,5 +1,3 @@
-Here is a complete, well-structured `README.md` for your SlicePDF project.
-
 ---
 # SlicePDF ✂️📄
 
